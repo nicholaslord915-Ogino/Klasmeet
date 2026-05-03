@@ -44,6 +44,7 @@ function showToast(msg, type = '') {
 }
 
 //  AUTH 
+// FIX: Auth tabs now properly wired via onclick in HTML
 function switchTab(tab) {
   document.querySelectorAll('.auth-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.auth-form').forEach(f => f.classList.toggle('active', f.id === tab + '-form'));
@@ -66,7 +67,7 @@ function signup() {
   const role = document.getElementById('signup-role').value;
   if (!name || !email || !pass) return showToast('Fill in all fields', 'error');
   if (state.users.find(u => u.email === email)) return showToast('Email already registered', 'error');
-  const user = { id: genId(), name, email, password: pass, role };
+  const user = { id: genId(), name, email, password: pass, role, bio: '', school: '', profilePic: '' };
   state.users.push(user);
   save();
   state.currentUser = user;
@@ -85,18 +86,33 @@ function enterApp() {
   const u = state.currentUser;
   document.getElementById('auth-screen').classList.remove('active');
   document.getElementById('dashboard-screen').classList.add('active');
-  document.getElementById('sidebar-name').textContent = u.name;
-  document.getElementById('sidebar-role').textContent = u.role;
-  document.getElementById('sidebar-avatar').textContent = initials(u.name);
+  refreshSidebarUser();
   document.getElementById('welcome-name').textContent = u.name.split(' ')[0];
   showDashboard();
   updateStats();
+}
+
+function refreshSidebarUser() {
+  const u = state.currentUser;
+  document.getElementById('sidebar-name').textContent = u.name;
+  document.getElementById('sidebar-role').textContent = u.role;
+  const avatarEl = document.getElementById('sidebar-avatar');
+  if (u.profilePic) {
+    avatarEl.innerHTML = `<img src="${u.profilePic}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" />`;
+    avatarEl.style.background = 'none';
+    avatarEl.style.padding = '0';
+  } else {
+    avatarEl.innerHTML = initials(u.name);
+    avatarEl.style.background = '';
+    avatarEl.style.padding = '';
+  }
 }
 
 // NAVIGATION 
 function showDashboard() {
   document.getElementById('home-view').classList.add('active');
   document.getElementById('class-view').classList.remove('active');
+  document.getElementById('settings-view').classList.remove('active');
   document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 0));
   renderClasses();
   updateStats();
@@ -105,6 +121,14 @@ function showDashboard() {
 function showClasses() {
   document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 1));
   renderClasses();
+}
+
+function showSettings() {
+  document.getElementById('home-view').classList.remove('active');
+  document.getElementById('class-view').classList.remove('active');
+  document.getElementById('settings-view').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 2));
+  renderSettings();
 }
 
 //  CLASSES 
@@ -193,6 +217,7 @@ function openClass(classId) {
   document.getElementById('class-title').textContent = cls.name;
   document.getElementById('class-code-display').textContent = cls.code;
   document.getElementById('home-view').classList.remove('active');
+  document.getElementById('settings-view').classList.remove('active');
   document.getElementById('class-view').classList.add('active');
   showTab('tasks');
 }
@@ -387,6 +412,137 @@ function renderMembers() {
   `).join('');
 }
 
+// ====== SETTINGS ======
+function renderSettings() {
+  const u = state.currentUser;
+  document.getElementById('settings-name').value = u.name || '';
+  document.getElementById('settings-email').value = u.email || '';
+  document.getElementById('settings-role-display').textContent = u.role || '';
+  document.getElementById('settings-bio').value = u.bio || '';
+  document.getElementById('settings-school').value = u.school || '';
+  document.getElementById('settings-phone').value = u.phone || '';
+  document.getElementById('settings-location').value = u.location || '';
+
+  // Render avatar preview
+  const preview = document.getElementById('settings-avatar-preview');
+  if (u.profilePic) {
+    preview.innerHTML = `<img src="${u.profilePic}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+    preview.style.background = 'none';
+    preview.style.fontSize = '0';
+  } else {
+    preview.textContent = initials(u.name);
+    preview.style.background = '';
+    preview.style.fontSize = '';
+  }
+}
+
+function handleProfilePicChange(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) return showToast('Please select an image file', 'error');
+  if (file.size > 5 * 1024 * 1024) return showToast('Image must be under 5MB', 'error');
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    state.currentUser.profilePic = dataUrl;
+    // Update the user in the users array too
+    const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+    if (idx !== -1) state.users[idx].profilePic = dataUrl;
+    save();
+
+    const preview = document.getElementById('settings-avatar-preview');
+    preview.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+    preview.style.background = 'none';
+    preview.style.fontSize = '0';
+
+    refreshSidebarUser();
+    showToast('Profile picture updated!');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProfilePic() {
+  state.currentUser.profilePic = '';
+  const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+  if (idx !== -1) state.users[idx].profilePic = '';
+  save();
+
+  const preview = document.getElementById('settings-avatar-preview');
+  preview.textContent = initials(state.currentUser.name);
+  preview.style.background = '';
+  preview.style.fontSize = '';
+
+  refreshSidebarUser();
+  showToast('Profile picture removed');
+}
+
+function saveSettings() {
+  const name = document.getElementById('settings-name').value.trim();
+  const email = document.getElementById('settings-email').value.trim();
+  const bio = document.getElementById('settings-bio').value.trim();
+  const school = document.getElementById('settings-school').value.trim();
+  const phone = document.getElementById('settings-phone').value.trim();
+  const location = document.getElementById('settings-location').value.trim();
+
+  if (!name || !email) return showToast('Name and email are required', 'error');
+  if (email !== state.currentUser.email && state.users.find(u => u.email === email && u.id !== state.currentUser.id)) {
+    return showToast('Email already in use', 'error');
+  }
+
+  // Update current user
+  state.currentUser.name = name;
+  state.currentUser.email = email;
+  state.currentUser.bio = bio;
+  state.currentUser.school = school;
+  state.currentUser.phone = phone;
+  state.currentUser.location = location;
+
+  // Sync to users array
+  const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+  if (idx !== -1) state.users[idx] = { ...state.users[idx], name, email, bio, school, phone, location };
+
+  // Update name in all class member lists
+  state.classes.forEach(cls => {
+    cls.members.forEach(m => {
+      if (m.id === state.currentUser.id) { m.name = name; m.email = email; }
+    });
+  });
+
+  save();
+  refreshSidebarUser();
+  document.getElementById('welcome-name').textContent = name.split(' ')[0];
+  showToast('Profile saved successfully!');
+}
+
+function changePassword() {
+  const current = document.getElementById('settings-current-password').value;
+  const newPass = document.getElementById('settings-new-password').value;
+  const confirm = document.getElementById('settings-confirm-password').value;
+
+  if (!current || !newPass || !confirm) return showToast('Fill in all password fields', 'error');
+  if (current !== state.currentUser.password) return showToast('Current password is incorrect', 'error');
+  if (newPass.length < 6) return showToast('New password must be at least 6 characters', 'error');
+  if (newPass !== confirm) return showToast('New passwords do not match', 'error');
+
+  state.currentUser.password = newPass;
+  const idx = state.users.findIndex(u => u.id === state.currentUser.id);
+  if (idx !== -1) state.users[idx].password = newPass;
+  save();
+
+  document.getElementById('settings-current-password').value = '';
+  document.getElementById('settings-new-password').value = '';
+  document.getElementById('settings-confirm-password').value = '';
+  showToast('Password changed successfully!');
+}
+
 //  MODALS 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ====== INIT: Wire up auth tabs on DOM ready ======
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.auth-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+});
