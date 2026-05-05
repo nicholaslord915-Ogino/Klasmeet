@@ -152,16 +152,24 @@ function renderClasses() {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><p>No classes yet. Create or join one!</p></div>`;
     return;
   }
-  grid.innerHTML = classes.map((c, i) => `
-    <div class="class-card class-card-color-${i % 5}" onclick="openClass('${c.id}')">
-      <div class="class-card-name">${c.name}</div>
-      <div class="class-card-subject">${c.subject}</div>
-      <div class="class-card-meta">
-        <span class="class-card-code">${c.code}</span>
-        <span class="class-card-members">👥 ${c.members.length} member${c.members.length !== 1 ? 's' : ''}</span>
+  const colors = [
+    { dot: '#6C3AFF', tag: 'rgba(108,58,255,0.15)', text: '#a78bfa' },
+    { dot: '#EC4899', tag: 'rgba(236,72,153,0.15)', text: '#f472b6' },
+    { dot: '#2563EB', tag: 'rgba(37,99,235,0.15)',  text: '#60a5fa' },
+    { dot: '#10b981', tag: 'rgba(16,185,129,0.15)', text: '#4ade80' },
+    { dot: '#f59e0b', tag: 'rgba(245,158,11,0.15)', text: '#fbbf24' },
+  ];
+  grid.innerHTML = classes.map((c, i) => {
+    const col = colors[i % colors.length];
+    return `
+      <div class="dash-class-item" onclick="openClass('${c.id}')">
+        <div class="dash-class-dot" style="background:${col.dot}"></div>
+        <span class="dash-class-name">${c.name}</span>
+        <span class="dash-class-sub">${c.subject}</span>
+        <span class="dash-class-members">👥 ${c.members.length}</span>
       </div>
-    </div>
-  `).join('');  
+    `;
+  }).join('');
 }
 
 function updateStats() {
@@ -179,6 +187,8 @@ function updateStats() {
   });
   document.getElementById('stat-tasks').textContent = pending;
   document.getElementById('stat-members').textContent = totalMembers;
+  const activeEl = document.getElementById('stat-active');
+  if (activeEl) activeEl.textContent = classes.length > 0 ? classes.length : '—';
 }
 
 function createClass() {
