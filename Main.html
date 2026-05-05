@@ -193,54 +193,107 @@
     <main class="main-content">
       <!-- Home View -->
       <div id="home-view" class="view active">
-        <div class="page-header">
-          <div>
-            <h2 class="page-title">Welcome back, <span id="welcome-name">Juan</span> 👋</h2>
-            <p class="page-subtitle">Here's what's happening in your classes today.</p>
+
+        <!-- Welcome Banner -->
+        <div class="dash-welcome-banner">
+          <div class="dash-welcome-text">
+            <h2>Good day, <span id="welcome-name">Juan</span>! 👋</h2>
+            <p id="dash-subtitle">Here's what's happening in your classes today.</p>
           </div>
-          <div class="header-actions">
+          <div class="dash-header-actions">
             <button class="btn-secondary" onclick="openModal('join-modal')">Join Class</button>
             <button class="btn-primary" onclick="openModal('create-modal')">+ Create Class</button>
           </div>
+          <div class="dash-orb-container">
+            <div class="dash-orb-ring"></div>
+            <div class="dash-orb"></div>
+          </div>
+          <div class="dash-banner-blob"></div>
         </div>
 
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-icon teal">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-            </div>
-            <div>
-              <p class="stat-num" id="stat-classes">0</p>
-              <p class="stat-label">Classes</p>
+        <!-- Stats Row -->
+        <div class="dash-stats-row">
+          <div class="dash-stat-card">
+            <div class="dash-stat-accent" style="background: linear-gradient(90deg,#6C3AFF,#a78bfa)"></div>
+            <div class="dash-stat-label">My Classes</div>
+            <div class="dash-stat-value" id="stat-classes">0</div>
+            <div class="dash-stat-badge badge-purple">enrolled</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-accent" style="background: linear-gradient(90deg,#EC4899,#f472b6)"></div>
+            <div class="dash-stat-label">Assignments</div>
+            <div class="dash-stat-value" id="stat-tasks">0</div>
+            <div class="dash-stat-badge badge-pink">due soon</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-accent" style="background: linear-gradient(90deg,#2563EB,#60a5fa)"></div>
+            <div class="dash-stat-label">Total Members</div>
+            <div class="dash-stat-value" id="stat-members">0</div>
+            <div class="dash-stat-badge badge-blue">across classes</div>
+          </div>
+          <div class="dash-stat-card">
+            <div class="dash-stat-accent" style="background: linear-gradient(90deg,#10b981,#4ade80)"></div>
+            <div class="dash-stat-label">Active Today</div>
+            <div class="dash-stat-value" id="stat-active">—</div>
+            <div class="dash-stat-badge badge-green">on track</div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: Classes + Schedule -->
+        <div class="dash-bottom-row">
+          <!-- My Classes Panel -->
+          <div class="dash-panel">
+            <div class="dash-panel-title">Your Classes</div>
+            <div class="dash-classes-list" id="classes-grid">
+              <div class="empty-state">
+                <div class="empty-icon">📚</div>
+                <p>No classes yet. Create or join one!</p>
+              </div>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon yellow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+
+          <!-- Quick Info Panel -->
+          <div class="dash-panel">
+            <div class="dash-panel-title">Quick Tips</div>
+            <div class="dash-tip-item">
+              <div class="dash-tip-icon" style="background:rgba(108,58,255,0.2)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
+              <div class="dash-tip-info">
+                <div class="dash-tip-name">Create a Class</div>
+                <div class="dash-tip-sub">Share the code with students to invite them</div>
+              </div>
             </div>
-            <div>
-              <p class="stat-num" id="stat-tasks">0</p>
-              <p class="stat-label">Pending Tasks</p>
+            <div class="dash-tip-item">
+              <div class="dash-tip-icon" style="background:rgba(236,72,153,0.2)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+              </div>
+              <div class="dash-tip-info">
+                <div class="dash-tip-name">Upload Tasks</div>
+                <div class="dash-tip-sub">Teachers can assign tasks inside each class</div>
+              </div>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <div class="dash-tip-item">
+              <div class="dash-tip-icon" style="background:rgba(37,99,235,0.2)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              </div>
+              <div class="dash-tip-info">
+                <div class="dash-tip-name">Start a Meeting</div>
+                <div class="dash-tip-sub">Paste a Meet or Zoom link inside the Meet tab</div>
+              </div>
             </div>
-            <div>
-              <p class="stat-num" id="stat-members">0</p>
-              <p class="stat-label">Total Members</p>
+            <div class="dash-tip-item">
+              <div class="dash-tip-icon" style="background:rgba(16,185,129,0.2)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="dash-tip-info">
+                <div class="dash-tip-name">Class Chat</div>
+                <div class="dash-tip-sub">Chat in real-time with your classmates</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <h3 class="section-title">Your Classes</h3>
-        <div class="classes-grid" id="classes-grid">
-          <div class="empty-state">
-            <div class="empty-icon">📚</div>
-            <p>No classes yet. Create or join one!</p>
-          </div>
-        </div>
       </div>
 
       <!-- Class View -->
