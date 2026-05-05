@@ -40,21 +40,84 @@ textarea { resize: vertical; }
   overflow: hidden;
 }
 
-.auth-bg { position: absolute; inset: 0; pointer-events: none; }
+.auth-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
 .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
-  animation: blobFloat 8s ease-in-out infinite;
+  filter: blur(72px);
+  opacity: 0.55;
 }
-.blob-1 { width: 500px; height: 500px; background: #6C3AFF; top: -150px; left: -150px; animation-delay: 0s; }
-.blob-2 { width: 400px; height: 400px; background: #3B82F6; bottom: -100px; left: 20%; animation-delay: 3s; }
-.blob-3 { width: 350px; height: 350px; background: #EC4899; top: 30%; right: 35%; animation-delay: 5s; opacity: 0.3; }
 
-@keyframes blobFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(20px, -20px) scale(1.05); }
+.blob-1 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, #7C3AED, #4C1D95);
+  top: 5%; left: -8%;
+  animation: roam1 14s ease-in-out infinite;
+}
+.blob-2 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, #2563EB, #1E40AF);
+  bottom: -5%; left: 15%;
+  animation: roam2 18s ease-in-out infinite;
+  opacity: 0.5;
+}
+.blob-3 {
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, #DB2777, #9D174D);
+  top: 35%; left: 30%;
+  animation: roam3 12s ease-in-out infinite;
+  opacity: 0.45;
+}
+.blob-4 {
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, #6D28D9, #3730A3);
+  top: -10%; left: 45%;
+  animation: roam4 16s ease-in-out infinite;
+  opacity: 0.4;
+}
+.blob-5 {
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, #7C3AED, #BE185D);
+  bottom: 10%; left: 5%;
+  animation: roam5 20s ease-in-out infinite;
+  opacity: 0.5;
+}
+
+@keyframes roam1 {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  25%  { transform: translate(80px, 60px) scale(1.08); }
+  50%  { transform: translate(140px, -40px) scale(0.95); }
+  75%  { transform: translate(50px, 100px) scale(1.05); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+@keyframes roam2 {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  20%  { transform: translate(-60px, -80px) scale(1.1); }
+  50%  { transform: translate(100px, -120px) scale(0.92); }
+  75%  { transform: translate(60px, -30px) scale(1.06); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+@keyframes roam3 {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  30%  { transform: translate(-100px, -60px) scale(1.12); }
+  60%  { transform: translate(-40px, 80px) scale(0.9); }
+  80%  { transform: translate(60px, 40px) scale(1.04); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+@keyframes roam4 {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  35%  { transform: translate(70px, 90px) scale(1.07); }
+  65%  { transform: translate(-80px, 50px) scale(0.94); }
+  85%  { transform: translate(-30px, -40px) scale(1.03); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+@keyframes roam5 {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  40%  { transform: translate(120px, -70px) scale(1.1); }
+  70%  { transform: translate(60px, -130px) scale(0.93); }
+  90%  { transform: translate(-20px, -50px) scale(1.05); }
+  100% { transform: translate(0px, 0px) scale(1); }
 }
 
 /* ====== AUTH SIDE CARD (right side like reference) ====== */
@@ -1277,6 +1340,8 @@ textarea { resize: vertical; }
   .blob-1 { width: 220px; height: 220px; }
   .blob-2 { width: 180px; height: 180px; }
   .blob-3 { width: 140px; height: 140px; }
+  .blob-4 { width: 200px; height: 200px; left: 30%; }
+  .blob-5 { width: 130px; height: 130px; }
 
   /* --- Dashboard Screen Layout --- */
   #dashboard-screen { flex-direction: column; overflow: visible; }
