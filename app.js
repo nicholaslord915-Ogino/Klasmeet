@@ -77,6 +77,14 @@ function signup() {
 function logout() {
   state.currentUser = null;
   state.currentClassId = null;
+  // Reset auth reveal state
+  const idle = document.getElementById('auth-idle-state');
+  const revealed = document.getElementById('auth-revealed-state');
+  const card = document.getElementById('auth-side-card');
+  idle.style.display = '';
+  idle.classList.remove('hiding');
+  revealed.classList.remove('visible');
+  card.classList.remove('expanding');
   document.getElementById('auth-screen').classList.add('active');
   document.getElementById('dashboard-screen').classList.remove('active');
   showDashboard();
@@ -153,7 +161,7 @@ function renderClasses() {
         <span class="class-card-members">👥 ${c.members.length} member${c.members.length !== 1 ? 's' : ''}</span>
       </div>
     </div>
-  `).join('');
+  `).join('');  
 }
 
 function updateStats() {
@@ -539,6 +547,22 @@ function changePassword() {
 //  MODALS 
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ====== AUTH REVEAL ANIMATION ======
+function revealAuthForm() {
+  const idle = document.getElementById('auth-idle-state');
+  const revealed = document.getElementById('auth-revealed-state');
+  const card = document.getElementById('auth-side-card');
+
+  // Animate idle state out
+  idle.classList.add('hiding');
+  card.classList.add('expanding');
+
+  setTimeout(() => {
+    idle.style.display = 'none';
+    revealed.classList.add('visible');
+  }, 350);
+}
 
 // ====== INIT: Wire up auth tabs on DOM ready ======
 document.addEventListener('DOMContentLoaded', () => {
