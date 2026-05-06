@@ -38,8 +38,8 @@ function fmtDateTime(d) {
 
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
-  t.textContent = (type === 'error' ? '❌ ' : '✅ ') + msg;
-  t.classList.add('show');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'error' ? ' toast-error' : '');
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
@@ -53,9 +53,17 @@ function switchTab(tab) {
 function login() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-password').value;
+  const remember = document.getElementById('login-remember').checked;
   if (!email || !pass) return showToast('Fill in all fields', 'error');
   const user = state.users.find(u => u.email === email && u.password === pass);
   if (!user) return showToast('Invalid email or password', 'error');
+  if (remember) {
+    localStorage.setItem('km_remember_email', email);
+    localStorage.setItem('km_remember_pass', pass);
+  } else {
+    localStorage.removeItem('km_remember_email');
+    localStorage.removeItem('km_remember_pass');
+  }
   state.currentUser = user;
   enterApp();
 }
@@ -63,11 +71,12 @@ function login() {
 function signup() {
   const name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
+  const idNumber = document.getElementById('signup-SN').value.trim();
   const pass = document.getElementById('signup-password').value;
   const role = document.getElementById('signup-role').value;
-  if (!name || !email || !pass) return showToast('Fill in all fields', 'error');
+  if (!name || !email || !idNumber || !pass) return showToast('Fill in all fields', 'error');
   if (state.users.find(u => u.email === email)) return showToast('Email already registered', 'error');
-  const user = { id: genId(), name, email, password: pass, role, bio: '', school: '', profilePic: '' };
+  const user = { id: genId(), name, email, password: pass, role, idNumber, bio: '', school: '', profilePic: '' };
   state.users.push(user);
   save();
   state.currentUser = user;
@@ -87,7 +96,7 @@ function logout() {
   card.classList.remove('expanding');
   document.getElementById('auth-screen').classList.add('active');
   document.getElementById('dashboard-screen').classList.remove('active');
-  showDashboard();
+  showHome();
 }
 
 function enterApp() {
@@ -96,8 +105,7 @@ function enterApp() {
   document.getElementById('dashboard-screen').classList.add('active');
   refreshSidebarUser();
   document.getElementById('welcome-name').textContent = u.name.split(' ')[0];
-  showDashboard();
-  updateStats();
+  showHome();
 }
 
 function refreshSidebarUser() {
@@ -117,26 +125,84 @@ function refreshSidebarUser() {
 }
 
 // NAVIGATION 
-function showDashboard() {
-  document.getElementById('home-view').classList.add('active');
-  document.getElementById('class-view').classList.remove('active');
-  document.getElementById('settings-view').classList.remove('active');
-  document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 0));
-  renderClasses();
-  updateStats();
+function _hideAllViews() {
+  ['home-view','classes-view','class-view','settings-view'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
 }
 
+function showHome() {
+  _hideAllViews();
+  document.getElementById('home-view').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 0));
+}
+
+function showDashboard() { showHome(); } // backward compat
+
 function showClasses() {
+  _hideAllViews();
+  document.getElementById('classes-view').classList.add('active');
   document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 1));
-  renderClasses();
+  renderGClasses();
+  setTimeout(closeSidebar, 80);
 }
 
 function showSettings() {
-  document.getElementById('home-view').classList.remove('active');
-  document.getElementById('class-view').classList.remove('active');
+  _hideAllViews();
   document.getElementById('settings-view').classList.add('active');
   document.querySelectorAll('.nav-item').forEach((b, i) => b.classList.toggle('active', i === 2));
   renderSettings();
+}
+
+// Google Classroom-style card colors
+const GCLASS_COLORS = [
+  { header: 'linear-gradient(135deg,#1a7a4a,#218a55)', accent: '#1a7a4a' },
+  { header: 'linear-gradient(135deg,#1565c0,#1976d2)', accent: '#1565c0' },
+  { header: 'linear-gradient(135deg,#6a1b9a,#7b1fa2)', accent: '#6a1b9a' },
+  { header: 'linear-gradient(135deg,#ad1457,#c2185b)', accent: '#ad1457' },
+  { header: 'linear-gradient(135deg,#00695c,#00796b)', accent: '#00695c' },
+  { header: 'linear-gradient(135deg,#37474f,#455a64)', accent: '#455a64' },
+  { header: 'linear-gradient(135deg,#bf360c,#d84315)', accent: '#bf360c' },
+  { header: 'linear-gradient(135deg,#0277bd,#0288d1)', accent: '#0277bd' },
+];
+
+function renderGClasses() {
+  const grid = document.getElementById('gclass-grid');
+  const classes = myClasses();
+  if (classes.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p>No classes yet. Create or join one to get started!</p></div>`;
+    return;
+  }
+  grid.innerHTML = classes.map((c, i) => {
+    const col = GCLASS_COLORS[i % GCLASS_COLORS.length];
+    const creator = state.users.find(u => u.id === c.creatorId);
+    const teacherName = creator ? creator.name : 'Teacher';
+    const pendingTasks = (state.tasks[c.id] || []).filter(t => {
+      const subs = state.submissions[t.id] || [];
+      return !subs.find(s => s.userId === state.currentUser.id);
+    }).length;
+    return `
+      <div class="gclass-card" onclick="openClass('${c.id}')">
+        <div class="gclass-header" style="background:${col.header}">
+          <div class="gclass-header-name">${c.name}</div>
+          <div class="gclass-header-section">${c.subject}</div>
+          <div class="gclass-header-teacher">${teacherName}</div>
+          <div class="gclass-header-avatar">${initials(teacherName)}</div>
+        </div>
+        <div class="gclass-body">
+          ${pendingTasks > 0
+            ? `<div class="gclass-pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>${pendingTasks} pending task${pendingTasks !== 1 ? 's' : ''}</div>`
+            : `<div class="gclass-pending gclass-pending-ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="20,6 9,17 4,12"/></svg>All caught up</div>`
+          }
+        </div>
+        <div class="gclass-footer">
+          <span class="gclass-code">Code: ${c.code}</span>
+          <span class="gclass-members">${c.members.length} member${c.members.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 //  CLASSES 
@@ -149,7 +215,7 @@ function renderClasses() {
   const grid = document.getElementById('classes-grid');
   const classes = myClasses();
   if (classes.length === 0) {
-    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><p>No classes yet. Create or join one!</p></div>`;
+    grid.innerHTML = `<div class="empty-state"><p>No classes yet. Create or join one!</p></div>`;
     return;
   }
   const colors = [
@@ -166,7 +232,7 @@ function renderClasses() {
         <div class="dash-class-dot" style="background:${col.dot}"></div>
         <span class="dash-class-name">${c.name}</span>
         <span class="dash-class-sub">${c.subject}</span>
-        <span class="dash-class-members">👥 ${c.members.length}</span>
+        <span class="dash-class-members">${c.members.length} member${c.members.length !== 1 ? 's' : ''}</span>
       </div>
     `;
   }).join('');
@@ -209,8 +275,8 @@ function createClass() {
   document.getElementById('new-class-name').value = '';
   document.getElementById('new-class-subject').value = '';
   showToast(`Class "${name}" created!`);
-  renderClasses();
-  updateStats();
+  renderGClasses();
+  showClasses();
 }
 
 function joinClass() {
@@ -224,8 +290,8 @@ function joinClass() {
   closeModal('join-modal');
   document.getElementById('join-code').value = '';
   showToast(`Joined "${cls.name}"!`);
-  renderClasses();
-  updateStats();
+  renderGClasses();
+  showClasses();
 }
 
 //  CLASS VIEW 
@@ -234,8 +300,7 @@ function openClass(classId) {
   const cls = state.classes.find(c => c.id === classId);
   document.getElementById('class-title').textContent = cls.name;
   document.getElementById('class-code-display').textContent = cls.code;
-  document.getElementById('home-view').classList.remove('active');
-  document.getElementById('settings-view').classList.remove('active');
+  _hideAllViews();
   document.getElementById('class-view').classList.add('active');
   showTab('tasks');
 }
@@ -264,7 +329,7 @@ function renderTasks() {
   const tasks = state.tasks[state.currentClassId] || [];
   const list = document.getElementById('tasks-list');
   if (tasks.length === 0) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>No tasks yet.</p></div>`;
+    list.innerHTML = `<div class="empty-state"><p>No tasks yet.</p></div>`;
     return;
   }
   list.innerHTML = tasks.map(t => {
@@ -279,9 +344,9 @@ function renderTasks() {
           <div class="task-due">Due: <span>${fmtDate(t.dueDate)}</span></div>
           ${mine ? `<div class="task-due" style="margin-top:4px">Submitted: <span>${mine.answer.slice(0, 50)}${mine.answer.length > 50 ? '…' : ''}</span></div>` : ''}
           ${!isTeacher && !mine ? `<button class="btn-submit" onclick="openSubmit('${t.id}')">Submit Task</button>` : ''}
-          ${isTeacher ? `<div style="margin-top:8px;font-size:0.82rem;color:var(--text-2)">📥 ${subs.length} submission(s)</div>` : ''}
+          ${isTeacher ? `<div style="margin-top:8px;font-size:0.82rem;color:var(--text-2)">${subs.length} submission(s)</div>` : ''}
         </div>
-        <span class="status-badge status-${status}">${status === 'submitted' ? '✓ Submitted' : '⏳ Pending'}</span>
+        <span class="status-badge status-${status}">${status === 'submitted' ? 'Submitted' : 'Pending'}</span>
       </div>
     `;
   }).join('');
@@ -342,7 +407,7 @@ function renderMeet() {
   list.innerHTML = meetings.map(m => `
     <div class="meeting-card">
       <div class="meeting-info">
-        <div class="meeting-title">🎥 ${m.title}</div>
+        <div class="meeting-title">${m.title}</div>
         <div class="meeting-time">${fmtDateTime(m.datetime)}</div>
       </div>
       <a href="${m.link}" target="_blank" class="btn-join-meeting">Join →</a>
@@ -372,7 +437,7 @@ function renderChat() {
   const msgs = state.messages[state.currentClassId] || [];
   const container = document.getElementById('chat-messages');
   if (msgs.length === 0) {
-    container.innerHTML = '<div class="chat-placeholder">Say hello to your class! 👋</div>';
+    container.innerHTML = '<div class="chat-placeholder">Say hello to your class!</div>';
     return;
   }
   container.innerHTML = msgs.map(m => {
@@ -422,7 +487,7 @@ function renderMembers() {
     <div class="member-item">
       <div class="avatar">${initials(m.name)}</div>
       <div class="member-info">
-        <div class="member-name">${m.name} ${m.id === cls.creatorId ? '👑' : ''}</div>
+        <div class="member-name">${m.name} ${m.id === cls.creatorId ? '<span class="creator-badge">Creator</span>' : ''}</div>
         <div class="member-email">${m.email}</div>
       </div>
       <span class="member-role-badge role-${m.role}">${m.role}</span>
@@ -579,4 +644,29 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.auth-tab').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
+
+  // Pre-fill login if remembered
+  const remEmail = localStorage.getItem('km_remember_email');
+  const remPass = localStorage.getItem('km_remember_pass');
+  if (remEmail && remPass) {
+    const emailEl = document.getElementById('login-email');
+    const passEl = document.getElementById('login-password');
+    const remEl = document.getElementById('login-remember');
+    if (emailEl) emailEl.value = remEmail;
+    if (passEl) passEl.value = remPass;
+    if (remEl) remEl.checked = true;
+  }
 });
+
+function updateIdLabel() {
+  const role = document.getElementById('signup-role').value;
+  const label = document.getElementById('id-number-label');
+  const input = document.getElementById('signup-SN');
+  if (role === 'teacher') {
+    label.textContent = 'Teacher Number';
+    input.placeholder = 'T-00000';
+  } else {
+    label.textContent = 'Student Number';
+    input.placeholder = '25-00000';
+  }
+}
